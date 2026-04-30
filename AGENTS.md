@@ -25,7 +25,7 @@ Important operational behavior:
 ## Project Snapshot
 
 - Package: `ollama-zit-import`
-- Language: Python `>=3.10`
+- Language: Python `>=3.12`
 - Layout:
   - Source: `src/ollama_zit_import/`
   - Tests: `tests/`

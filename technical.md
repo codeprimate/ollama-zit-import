@@ -119,7 +119,7 @@ Entry points: `python3 -m ollama_zit_import` or console script `ollama-zit-impor
 - **numpy** — Buffer dtype conversions, QKV splits, BF16 packing.
 - **rich** — Console output, progress bar during tensor conversion.
 
-Python **3.10+**.
+Python **3.12+**.
 
 ## Development tooling
 

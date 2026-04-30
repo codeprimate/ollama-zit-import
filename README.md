@@ -51,7 +51,7 @@ Arbitrary diffusion checkpoints are not expected to work.
 
 You need:
 
-- Python 3.10 or newer.
+- Python 3.12 or newer.
 - Ollama installed and available on `PATH`, or passed with `--ollama-bin`.
 - An initialized Ollama models directory.
 - A z-image-turbo checkpoint, LoRA adapter, or base model.

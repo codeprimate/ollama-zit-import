@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import tomllib
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-import tomllib  # type: ignore[import-untyped]
-
 __all__ = ["__version__"]
+
+PACKAGE_NAME = "ollama-zit-import"
 
 
 def _read_version_from_pyproject() -> str:
@@ -19,9 +20,8 @@ def _read_version_from_pyproject() -> str:
 
 
 def _resolve_version() -> str:
-    package_name = "ollama-zit-import"
     try:
-        return version(package_name)
+        return version(PACKAGE_NAME)
     except PackageNotFoundError:
         return _read_version_from_pyproject()
 
