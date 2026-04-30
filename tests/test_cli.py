@@ -11,8 +11,8 @@ from types import SimpleNamespace
 import pytest
 
 import ollama_zit_import.cli as cli_module
-from ollama_zit_import.derive import make_single_tensor_blob
 from ollama_zit_import.cli import run
+from ollama_zit_import.derive import make_single_tensor_blob
 
 
 def _write_safetensors(path: Path, header: dict[str, object], payload: bytes = b"\x00\x00") -> None:
@@ -86,9 +86,9 @@ def test_dry_run_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
             lora=None,
         ),
     )
-    monkeypatch.setattr("ollama_zit_import.cli.check_ollama_binary", lambda _p: None)
+    monkeypatch.setattr("ollama_zit_import.runtime_support.check_ollama_binary", lambda _p: None)
     monkeypatch.setattr(
-        "ollama_zit_import.cli.detect_ollama_binary", lambda explicit: str(explicit)
+        "ollama_zit_import.runtime_support.detect_ollama_binary", lambda explicit: str(explicit)
     )
 
     assert run() == 0
@@ -148,9 +148,9 @@ def test_lora_dry_run_reports_match_stats(
             dry_run=True,
         ),
     )
-    monkeypatch.setattr("ollama_zit_import.cli.check_ollama_binary", lambda _p: None)
+    monkeypatch.setattr("ollama_zit_import.runtime_support.check_ollama_binary", lambda _p: None)
     monkeypatch.setattr(
-        "ollama_zit_import.cli.detect_ollama_binary", lambda explicit: str(explicit)
+        "ollama_zit_import.runtime_support.detect_ollama_binary", lambda explicit: str(explicit)
     )
     assert run() == 0
     captured = capsys.readouterr().out
@@ -224,9 +224,9 @@ def test_lora_execution_writes_output_manifest(monkeypatch: pytest.MonkeyPatch, 
             dry_run=False,
         ),
     )
-    monkeypatch.setattr("ollama_zit_import.cli.check_ollama_binary", lambda _p: None)
+    monkeypatch.setattr("ollama_zit_import.runtime_support.check_ollama_binary", lambda _p: None)
     monkeypatch.setattr(
-        "ollama_zit_import.cli.detect_ollama_binary", lambda explicit: str(explicit)
+        "ollama_zit_import.runtime_support.detect_ollama_binary", lambda explicit: str(explicit)
     )
 
     assert run() == 0
@@ -299,9 +299,9 @@ def test_lora_execution_fails_when_output_manifest_exists(
             dry_run=False,
         ),
     )
-    monkeypatch.setattr("ollama_zit_import.cli.check_ollama_binary", lambda _p: None)
+    monkeypatch.setattr("ollama_zit_import.runtime_support.check_ollama_binary", lambda _p: None)
     monkeypatch.setattr(
-        "ollama_zit_import.cli.detect_ollama_binary", lambda explicit: str(explicit)
+        "ollama_zit_import.runtime_support.detect_ollama_binary", lambda explicit: str(explicit)
     )
 
     with pytest.raises(FileExistsError, match="Output manifest already exists"):

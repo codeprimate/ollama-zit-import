@@ -12,7 +12,7 @@ from ollama_zit_import.lora import LoRASpec, parse_lora_specs
 
 DEFAULT_MODEL_NAMESPACE = "my"
 ExecutionMode = Literal["standard_import", "lora_only_derivation"]
-MODEL_PATH_COMPONENT_PATTERN = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
+MODEL_PATH_COMPONENT_PATTERN = re.compile(r"^[A-Za-z0-9]+(?:[._-][A-Za-z0-9]+)*$")
 MODEL_TAG_PATTERN = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$")
 
 

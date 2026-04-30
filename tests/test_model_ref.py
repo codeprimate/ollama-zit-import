@@ -5,8 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from ollama_zit_import.cli import to_bf16_bytes, to_float32
-from ollama_zit_import.derive import quantize_float32_to_u32_packed
+from ollama_zit_import.derive import quantize_float32_to_u32_packed, to_bf16_bytes, to_float32
 from ollama_zit_import.key_mapping import map_name
 from ollama_zit_import.planning import parse_model_ref
 
@@ -30,6 +29,15 @@ def test_parse_model_ref_with_namespace_and_tag() -> None:
 
 
 @pytest.mark.unit
+def test_parse_model_ref_allows_uppercase_namespace_and_name() -> None:
+    parsed = parse_model_ref("My/ModelName:latest")
+    assert parsed.namespace == "My"
+    assert parsed.name == "ModelName"
+    assert parsed.tag == "latest"
+    assert parsed.display_name == "My/ModelName"
+
+
+@pytest.mark.unit
 def test_parse_model_ref_rejects_empty() -> None:
     with pytest.raises(ValueError):
         parse_model_ref("   ")
@@ -43,7 +51,6 @@ def test_parse_model_ref_rejects_empty() -> None:
         "ns/../evil:latest",
         "ns/evil/name:latest",
         "ns/evil:../latest",
-        "BadNs/model:latest",
         "ns/model$:latest",
     ],
 )

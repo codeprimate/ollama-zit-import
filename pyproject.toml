@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ollama-zit-import"
-version = "0.2.0"
+version = "0.3.0"
 description = "Import z-image-turbo safetensors checkpoints into Ollama models."
 readme = "README.md"
 requires-python = ">=3.10"
