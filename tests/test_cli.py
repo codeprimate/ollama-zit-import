@@ -20,6 +20,13 @@ def _write_safetensors(path: Path, header: dict[str, object], payload: bytes = b
     path.write_bytes(len(header_raw).to_bytes(8, "little") + header_raw + payload)
 
 
+def _patch_ollama_runtime(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("ollama_zit_import.importer.check_ollama_binary", lambda _p: None)
+    monkeypatch.setattr(
+        "ollama_zit_import.importer.detect_ollama_binary", lambda explicit: str(explicit)
+    )
+
+
 @pytest.mark.unit
 def test_main_help_text() -> None:
     from subprocess import run as sp_run
@@ -86,10 +93,7 @@ def test_dry_run_path(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
             lora=None,
         ),
     )
-    monkeypatch.setattr("ollama_zit_import.runtime_support.check_ollama_binary", lambda _p: None)
-    monkeypatch.setattr(
-        "ollama_zit_import.runtime_support.detect_ollama_binary", lambda explicit: str(explicit)
-    )
+    _patch_ollama_runtime(monkeypatch)
 
     assert run() == 0
 
@@ -148,10 +152,7 @@ def test_lora_dry_run_reports_match_stats(
             dry_run=True,
         ),
     )
-    monkeypatch.setattr("ollama_zit_import.runtime_support.check_ollama_binary", lambda _p: None)
-    monkeypatch.setattr(
-        "ollama_zit_import.runtime_support.detect_ollama_binary", lambda explicit: str(explicit)
-    )
+    _patch_ollama_runtime(monkeypatch)
     assert run() == 0
     captured = capsys.readouterr().out
     assert "branch=lora_only_derivation" in captured
@@ -228,10 +229,7 @@ def test_lora_execution_writes_output_manifest(
             dry_run=False,
         ),
     )
-    monkeypatch.setattr("ollama_zit_import.runtime_support.check_ollama_binary", lambda _p: None)
-    monkeypatch.setattr(
-        "ollama_zit_import.runtime_support.detect_ollama_binary", lambda explicit: str(explicit)
-    )
+    _patch_ollama_runtime(monkeypatch)
 
     assert run() == 0
     assert output_manifest.exists()
@@ -305,10 +303,7 @@ def test_lora_execution_fails_when_output_manifest_exists(
             dry_run=False,
         ),
     )
-    monkeypatch.setattr("ollama_zit_import.runtime_support.check_ollama_binary", lambda _p: None)
-    monkeypatch.setattr(
-        "ollama_zit_import.runtime_support.detect_ollama_binary", lambda explicit: str(explicit)
-    )
+    _patch_ollama_runtime(monkeypatch)
 
     with pytest.raises(FileExistsError, match="Output manifest already exists"):
         run()
