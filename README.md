@@ -56,14 +56,24 @@ You need:
 - An initialized Ollama models directory.
 - A z-image-turbo checkpoint, LoRA adapter, or base model.
 
+`ollama-zit-import` is known to work with Ollama `v0.22.0`. Future Ollama updates may
+introduce breaking changes. If you hit a compatibility issue, please open a bug report
+at [GitHub issues](https://github.com/codeprimate/ollama-zit-import/issues).
+
 By default, Ollama stores models in `$OLLAMA_MODELS` if set, otherwise
 `~/.ollama/models`. You can point the importer somewhere else with `--ollama-models`.
 
 ## Installation
 
-Install the package with:
+```bash
+python3 -m pip install git+https://github.com/codeprimate/ollama-zit-import.git
+```
+
+Optional local install from a clone:
 
 ```bash
+git clone https://github.com/codeprimate/ollama-zit-import.git
+cd ollama-zit-import
 make install
 ```
 
@@ -192,7 +202,35 @@ existing data when possible and creates a new model entry for the requested outp
 
 For deeper implementation details, see [`technical.md`](technical.md).
 
+## Contributing
+
+Contributions are welcome.
+
+- Open bugs and feature requests in [GitHub issues](https://github.com/codeprimate/ollama-zit-import/issues).
+- Send pull requests for fixes and improvements.
+- For local development, use `make dev-install`.
+- Before opening a pull request, run `make check`.
+
 ## Developer Workflow
+
+Clone the repository:
+
+```bash
+git clone https://github.com/codeprimate/ollama-zit-import.git
+cd ollama-zit-import
+```
+
+Install `uv` first if needed:
+
+```bash
+brew install uv
+```
+
+Sync dependencies into the project environment:
+
+```bash
+uv sync --extra dev
+```
 
 Use the developer install when working on the project:
 
@@ -200,7 +238,8 @@ Use the developer install when working on the project:
 make dev-install
 ```
 
-This installs the package in editable mode with development dependencies.
+This installs the package in editable mode with development dependencies into
+the existing `.venv` using `uv`.
 
 Useful development commands:
 
@@ -211,6 +250,12 @@ Useful development commands:
 - `make check`: run linting, format check, type checking, and tests.
 - `make run-help`: verify the module entry point and help output.
 - `make dry-run-example`: print the standard dry-run command template.
+
+The `Makefile` routes tooling through `uv` in the project environment.
+
+If you run commands directly, prefer:
+
+- `uv run ...`
 
 The package entry points are:
 

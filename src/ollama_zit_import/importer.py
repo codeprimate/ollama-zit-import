@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import cast
 
 from rich.console import Console
 from rich.progress import (
@@ -22,7 +23,7 @@ from ollama_zit_import.key_mapping import count_matching_targets
 from ollama_zit_import.lora import analyze_lora_header
 from ollama_zit_import.lora_importer import execute_lora_derivation
 from ollama_zit_import.model_importer import execute_standard_import
-from ollama_zit_import.planning import create_import_plan
+from ollama_zit_import.planning import ImportPlan, create_import_plan
 from ollama_zit_import.runtime_support import (
     check_ollama_binary,
     detect_ollama_binary,
@@ -33,7 +34,7 @@ CONFIG_LAYER_NAME = "transformer/config.json"
 TRANSFORMER_PREFIX = "transformer/"
 
 
-def _validate_inputs(plan, ollama_models: Path) -> None:
+def _validate_inputs(plan: ImportPlan, ollama_models: Path) -> None:
     if plan.mode == "standard_import":
         if plan.safetensors_path is None:
             raise ValueError("Missing safetensors path in standard import mode")
@@ -52,14 +53,16 @@ def _validate_inputs(plan, ollama_models: Path) -> None:
 
 def _kept_base_layers(base: dict[str, object]) -> list[dict[str, object]]:
     kept_layers: list[dict[str, object]] = []
-    for layer in base.get("layers", []):
+    raw_layers = cast(list[object], base.get("layers") or [])
+    base_layers = [dict(layer) for layer in raw_layers if isinstance(layer, dict)]
+    for layer in base_layers:
         name = str(layer.get("name", ""))
         component = name.split("/")[0] if "/" in name else ""
         if component != "transformer":
             kept_layers.append(dict(layer))
 
     config_kept = False
-    for layer in base.get("layers", []):
+    for layer in base_layers:
         if layer.get("name") == CONFIG_LAYER_NAME:
             kept_layers.append(dict(layer))
             config_kept = True
@@ -99,8 +102,10 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
 
     with Path(base_manifest).open(encoding="utf-8") as handle:
         base = json.load(handle)
+    raw_layers = cast(list[object], base.get("layers") or [])
+    base_layers = [dict(layer) for layer in raw_layers if isinstance(layer, dict)]
     base_layer_lookup = {
-        str(layer.get("name")): dict(layer) for layer in base.get("layers", []) if layer.get("name")
+        str(layer.get("name")): dict(layer) for layer in base_layers if layer.get("name")
     }
     kept_layers = _kept_base_layers(base)
 
@@ -113,7 +118,7 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
     estimated_tensor_writes = 0
     base_transformer_names = [
         str(layer.get("name"))
-        for layer in base.get("layers", [])
+        for layer in base_layers
         if str(layer.get("name", "")).startswith(TRANSFORMER_PREFIX)
         and str(layer.get("name")) != CONFIG_LAYER_NAME
     ]
@@ -126,7 +131,9 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
         estimated_tensor_writes = len(source_tensors)
         if active_console:
             active_console.print(f"  [bold]Checkpoint[/bold]    {safetensors_path}")
-            active_console.print(f"                [dim]{len(source_tensors)} transformer tensors[/dim]")
+            active_console.print(
+                f"                [dim]{len(source_tensors)} transformer tensors[/dim]"
+            )
             active_console.print()
     else:
         if active_console:
@@ -140,7 +147,9 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
                 lora_target_keys=lora_analysis.recognized_target_keys,
             )
             matched_lora_keys += matched
-            unmatched_lora_keys += lora_analysis.unmatched_count + (lora_analysis.matched_count - matched)
+            unmatched_lora_keys += lora_analysis.unmatched_count + (
+                lora_analysis.matched_count - matched
+            )
             if active_console:
                 active_console.print(
                     f"                [dim]- {lora_spec.path} @ {lora_spec.user_weight:.3f}[/dim]"
@@ -155,9 +164,13 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
             active_console.print()
     if active_console:
         active_console.print(f"  [bold]Base model[/bold]    [cyan]{base_model.display_name}[/cyan]")
-        active_console.print(f"                [dim]{len(kept_layers)} non-transformer layers retained[/dim]")
+        active_console.print(
+            f"                [dim]{len(kept_layers)} non-transformer layers retained[/dim]"
+        )
         active_console.print()
-        active_console.print(f"  [bold]Output[/bold]        [cyan]{output_model.display_name}[/cyan]")
+        active_console.print(
+            f"  [bold]Output[/bold]        [cyan]{output_model.display_name}[/cyan]"
+        )
         active_console.print(f"                [dim]{out_manifest}[/dim]")
         active_console.print()
         active_console.rule(style="dim")
@@ -165,7 +178,9 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
     if args.dry_run:
         if active_console:
             active_console.print()
-            active_console.print("  [bold yellow]Dry run[/bold yellow] — no files written. Looks good.")
+            active_console.print(
+                "  [bold yellow]Dry run[/bold yellow] — no files written. Looks good."
+            )
             active_console.print(f"                [dim]branch={plan.mode}[/dim]")
             active_console.print(
                 "                "
@@ -195,7 +210,9 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
                 TimeRemainingColumn(),
                 console=active_console,
             ) as progress:
-                task_id = progress.add_task("Applying LoRA deltas", total=len(base_transformer_names))
+                task_id = progress.add_task(
+                    "Applying LoRA deltas", total=len(base_transformer_names)
+                )
                 new_layers, blobs_new, blobs_reused, warnings = execute_lora_derivation(
                     loras=plan.loras,
                     base=base,
@@ -229,7 +246,9 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
                 TimeRemainingColumn(),
                 console=active_console,
             ) as progress:
-                task_id = progress.add_task("Converting and writing tensors", total=len(source_tensors))
+                task_id = progress.add_task(
+                    "Converting and writing tensors", total=len(source_tensors)
+                )
                 new_layers, blobs_new, blobs_reused = execute_standard_import(
                     source_tensors=source_tensors,
                     header=header,
@@ -264,13 +283,17 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
 
     if active_console:
         active_console.print()
-        active_console.print(f"  [bold green]Imported[/bold green]  [cyan]{output_model.display_name}[/cyan]")
+        active_console.print(
+            f"  [bold green]Imported[/bold green]  [cyan]{output_model.display_name}[/cyan]"
+        )
         active_console.print()
         active_console.print(
             f"  [bold]Layers[/bold]    {total_layers} total"
             f"  [dim]({base_count} base + {transformer_count} transformer)[/dim]"
         )
-        active_console.print(f"  [bold]Blobs[/bold]     {blobs_new} written · {blobs_reused} reused")
+        active_console.print(
+            f"  [bold]Blobs[/bold]     {blobs_new} written · {blobs_reused} reused"
+        )
         active_console.print()
         active_console.print(
             f'  [bold]Run:[/bold]  [cyan]{ollama_bin} run {output_model.run_name} "your prompt"[/cyan]'

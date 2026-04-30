@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import struct
 from collections import defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
@@ -24,7 +24,7 @@ class DeriveStats:
 
 
 def read_safetensors_header(path: str) -> tuple[dict[str, object], int]:
-    with open(path, "rb") as handle:
+    with Path(path).open("rb") as handle:
         header_len = struct.unpack("<Q", handle.read(8))[0]
         header = json.loads(handle.read(header_len))
     return cast(dict[str, object], header), 8 + header_len
@@ -35,7 +35,7 @@ def read_tensor_raw(
 ) -> bytes:
     tensor_entry = cast(dict[str, Any], header[tensor_name])
     start, end = cast(tuple[int, int], tuple(tensor_entry["data_offsets"]))
-    with open(path, "rb") as handle:
+    with Path(path).open("rb") as handle:
         handle.seek(data_offset + start)
         return handle.read(end - start)
 
@@ -46,7 +46,9 @@ def _dequantize_u32_with_scale_bias(
     if packed.ndim != 2 or scale.ndim != 2 or qbias.ndim != 2:
         raise ValueError(f"U32 dequantization expects 2D tensors for {key}")
     if scale.shape != qbias.shape:
-        raise ValueError(f"U32 scale/qbias shape mismatch for {key}: {scale.shape} vs {qbias.shape}")
+        raise ValueError(
+            f"U32 scale/qbias shape mismatch for {key}: {scale.shape} vs {qbias.shape}"
+        )
     if packed.shape[0] != scale.shape[0]:
         raise ValueError(f"U32 row mismatch for {key}: packed={packed.shape}, scale={scale.shape}")
     unpacked = np.empty((packed.shape[0], packed.shape[1] * 4), dtype=np.uint8)
@@ -63,7 +65,7 @@ def _dequantize_u32_with_scale_bias(
     group_width = unpacked.shape[1] // scale.shape[1]
     reshaped = unpacked.astype(np.float32).reshape(unpacked.shape[0], scale.shape[1], group_width)
     out = (reshaped - qbias[..., None]) * scale[..., None]
-    return out.reshape(unpacked.shape).astype(np.float32)
+    return cast(np.ndarray, out.reshape(unpacked.shape).astype(np.float32))
 
 
 def quantize_float32_to_u32_packed(
@@ -72,7 +74,9 @@ def quantize_float32_to_u32_packed(
     if values.ndim != 2 or scale.ndim != 2 or qbias.ndim != 2:
         raise ValueError(f"U32 quantization expects 2D tensors for {key}")
     if scale.shape != qbias.shape:
-        raise ValueError(f"U32 scale/qbias shape mismatch for {key}: {scale.shape} vs {qbias.shape}")
+        raise ValueError(
+            f"U32 scale/qbias shape mismatch for {key}: {scale.shape} vs {qbias.shape}"
+        )
     if values.shape[0] != scale.shape[0]:
         raise ValueError(f"U32 row mismatch for {key}: values={values.shape}, scale={scale.shape}")
     if values.shape[1] % scale.shape[1] != 0:
@@ -95,7 +99,7 @@ def quantize_float32_to_u32_packed(
         | (quantized[:, 2::4].astype(np.uint32) << 16)
         | (quantized[:, 3::4].astype(np.uint32) << 24)
     )
-    return packed
+    return cast(np.ndarray, packed)
 
 
 def to_float32(
@@ -117,7 +121,9 @@ def to_float32(
     if dtype == "U32":
         packed = np.frombuffer(raw, dtype=np.uint32).reshape(shape)
         if scale is None or qbias is None:
-            raise ValueError(f"Unsupported source dtype for tensor conversion without scale/qbias: {dtype}")
+            raise ValueError(
+                f"Unsupported source dtype for tensor conversion without scale/qbias: {dtype}"
+            )
         return _dequantize_u32_with_scale_bias(packed, scale, qbias, key)
     raise ValueError(f"Unsupported source dtype for tensor conversion: {dtype}")
 
@@ -138,17 +144,19 @@ def make_single_tensor_blob(dtype: str, shape: list[int], tensor_data: bytes) ->
 
 def write_blob(blobs_dir: str, raw_blob: bytes) -> tuple[str, int, bool]:
     digest = hashlib.sha256(raw_blob).hexdigest()
-    blob_path = os.path.join(blobs_dir, f"sha256-{digest}")
-    if os.path.exists(blob_path):
+    blob_path = Path(blobs_dir) / f"sha256-{digest}"
+    if blob_path.exists():
         return f"sha256:{digest}", len(raw_blob), False
-    temp_path = blob_path + ".tmp"
-    with open(temp_path, "wb") as handle:
+    temp_path = blob_path.with_suffix(f"{blob_path.suffix}.tmp")
+    with temp_path.open("wb") as handle:
         handle.write(raw_blob)
-    os.replace(temp_path, blob_path)
+    temp_path.replace(blob_path)
     return f"sha256:{digest}", len(raw_blob), True
 
 
-def _read_tensor_array(path: str, header: dict[str, object], data_offset: int, key: str) -> np.ndarray:
+def _read_tensor_array(
+    path: str, header: dict[str, object], data_offset: int, key: str
+) -> np.ndarray:
     info = cast(dict[str, Any], header[key])
     dtype = cast(str, info["dtype"])
     shape = cast(list[int], info["shape"])
@@ -162,14 +170,16 @@ def _as_scalar(arr: np.ndarray, key: str) -> float:
     return float(arr.reshape(-1)[0])
 
 
-def _compute_delta(up: np.ndarray, down: np.ndarray, alpha: float, user_weight: float, key: str) -> np.ndarray:
+def _compute_delta(
+    up: np.ndarray, down: np.ndarray, alpha: float, user_weight: float, key: str
+) -> np.ndarray:
     if up.ndim != 2 or down.ndim != 2:
         raise ValueError(f"Only 2D LoRA matrices are supported: {key}")
     if up.shape[1] != down.shape[0]:
         raise ValueError(f"LoRA rank mismatch for {key}: up={up.shape}, down={down.shape}")
     rank = down.shape[0]
     alpha_scale = alpha / rank if rank else 1.0
-    return (up @ down) * float(user_weight * alpha_scale)
+    return cast(np.ndarray, (up @ down) * float(user_weight * alpha_scale))
 
 
 def load_lora_deltas(loras: list[LoRASpec]) -> dict[str, np.ndarray]:
@@ -203,7 +213,11 @@ def load_lora_deltas(loras: list[LoRASpec]) -> dict[str, np.ndarray]:
             up = part_map.get("up")
             if down is None or up is None:
                 continue
-            alpha = _as_scalar(part_map["alpha"], target_key) if "alpha" in part_map else float(down.shape[0])
+            alpha = (
+                _as_scalar(part_map["alpha"], target_key)
+                if "alpha" in part_map
+                else float(down.shape[0])
+            )
             delta = _compute_delta(up, down, alpha, spec.user_weight, target_key)
             if target_key in deltas:
                 deltas[target_key] = deltas[target_key] + delta

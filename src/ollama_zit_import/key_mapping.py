@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 
 def normalize_base_transformer_name(layer_name: str) -> str:
@@ -33,4 +33,3 @@ def map_name(comfy_name: str) -> list[tuple[str, str | None]]:
             (f"{prefix}.attention.to_v.weight", "v"),
         ]
     return [(name, None)]
-

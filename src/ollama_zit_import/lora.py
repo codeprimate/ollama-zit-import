@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 MIN_LORA_WEIGHT = 0.1
 MAX_LORA_WEIGHT = 1.0
@@ -65,7 +65,7 @@ def parse_lora_spec(raw_value: str) -> LoRASpec:
             f"LoRA weight must be between {MIN_LORA_WEIGHT} and {MAX_LORA_WEIGHT}: {raw_value}"
         )
 
-    return LoRASpec(path=os.path.abspath(path), user_weight=weight)
+    return LoRASpec(path=str(Path(path).resolve()), user_weight=weight)
 
 
 def parse_lora_specs(raw_values: list[str]) -> list[LoRASpec]:
@@ -124,4 +124,3 @@ def parse_lora_tensor_key(key: str) -> tuple[str, str] | None:
     if not normalized.endswith(".weight"):
         normalized = f"{normalized}.weight"
     return normalized, part
-

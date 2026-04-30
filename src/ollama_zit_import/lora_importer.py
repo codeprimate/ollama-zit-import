@@ -38,9 +38,11 @@ def execute_lora_derivation(
     lora_deltas = load_lora_deltas(loras)
     matched_targets: set[str] = set()
     shape_mismatch_targets: list[str] = []
+    raw_layers = cast(list[object], base.get("layers") or [])
+    base_layers = [dict(layer) for layer in raw_layers if isinstance(layer, dict)]
     transformer_layers = [
         dict(layer)
-        for layer in base.get("layers", [])
+        for layer in base_layers
         if str(layer.get("name", "")).startswith("transformer/")
         and str(layer.get("name")) != "transformer/config.json"
     ]
@@ -105,7 +107,9 @@ def execute_lora_derivation(
         )
         delta = lora_deltas[target_key]
         if list(delta.shape) != list(base_arr.shape):
-            shape_mismatch_targets.append(f"{target_key} delta={list(delta.shape)} base={list(base_arr.shape)}")
+            shape_mismatch_targets.append(
+                f"{target_key} delta={list(delta.shape)} base={list(base_arr.shape)}"
+            )
             new_layers.append(layer)
             if on_transformer_layer_complete:
                 on_transformer_layer_complete()

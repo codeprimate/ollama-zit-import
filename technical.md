@@ -102,7 +102,7 @@ Keys are normalized and compared to base transformer layer names during dry-run 
 
 ## CLI surface
 
-Entry points: `python -m ollama_zit_import` or console script `ollama-zit-import` → `ollama_zit_import.__main__:main`, which wraps `cli.run()` and maps uncaught exceptions to exit code 1 and stderr message.
+Entry points: `python3 -m ollama_zit_import` or console script `ollama-zit-import` → `ollama_zit_import.__main__:main`, which wraps `cli.run()` and maps uncaught exceptions to exit code 1 and stderr message.
 
 | Argument | Description |
 |----------|-------------|
@@ -120,6 +120,26 @@ Entry points: `python -m ollama_zit_import` or console script `ollama-zit-import
 - **rich** — Console output, progress bar during tensor conversion.
 
 Python **3.10+**.
+
+## Development tooling
+
+The repository uses `uv` with a project-local `.venv` for developer commands:
+
+```bash
+git clone https://github.com/codeprimate/ollama-zit-import.git
+cd ollama-zit-import
+```
+
+- `make dev-install` installs editable package + dev dependencies into `.venv`
+- `make test`, `make lint`, `make format`, and `make typecheck` execute via `uv run ...`
+- `make install` builds with `python -m build` and installs the wheel with the active Python environment
+
+Use `uv sync --extra dev` to align the environment with project dependencies. This also
+creates `.venv` automatically if it does not exist.
+
+For end users, installation is via `pip` from the GitHub repository:
+
+`python3 -m pip install git+https://github.com/codeprimate/ollama-zit-import.git`
 
 ## Limitations and operational notes
 

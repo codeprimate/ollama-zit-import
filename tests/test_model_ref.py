@@ -101,7 +101,9 @@ def test_u32_quantize_roundtrip_with_scale_and_qbias() -> None:
     original = np.array([[0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0]], dtype=np.float32)
     scale = np.array([[2.0]], dtype=np.float32)
     qbias = np.array([[1.0]], dtype=np.float32)
-    packed = quantize_float32_to_u32_packed(original, scale, qbias, key="transformer/example.weight")
+    packed = quantize_float32_to_u32_packed(
+        original, scale, qbias, key="transformer/example.weight"
+    )
     recovered = to_float32(
         packed.tobytes(),
         "U32",

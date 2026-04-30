@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 
 from rich.console import Console
 
@@ -42,7 +43,7 @@ def _common_parser(description: str, *, require_base_model: bool) -> argparse.Ar
 
 def parse_args() -> argparse.Namespace:
     description = "Import z-image-turbo safetensors into Ollama as a new model."
-    argv = os.sys.argv[1:]
+    argv = sys.argv[1:]
     if "--lora" in argv:
         parser = _common_parser(description, require_base_model=True)
         parser.add_argument(

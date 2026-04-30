@@ -5,7 +5,7 @@ from __future__ import annotations
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-import tomllib
+import tomllib  # type: ignore[import-untyped]
 
 __all__ = ["__version__"]
 

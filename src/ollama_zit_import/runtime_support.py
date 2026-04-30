@@ -87,7 +87,9 @@ def ensure_base_model_present(
                 f"[bold yellow]Base model missing/incomplete.[/bold yellow] "
                 f"Pulling [cyan]{base_model.display_name}[/cyan] ..."
             )
-        result = subprocess.run([ollama_bin, OLLAMA_PULL_COMMAND, base_model.display_name], check=False)
+        result = subprocess.run(
+            [ollama_bin, OLLAMA_PULL_COMMAND, base_model.display_name], check=False
+        )
         if result.returncode != 0:
             raise RuntimeError(f"Failed to pull base model: {base_model.display_name}")
         if not base_manifest_path.is_file():

@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import argparse
-import os
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
 from ollama_zit_import.lora import LoRASpec, parse_lora_specs
@@ -24,7 +24,7 @@ class ModelRef:
 
     @property
     def manifest_path_part(self) -> str:
-        return os.path.join(self.namespace, self.name, self.tag)
+        return str(Path(self.namespace) / self.name / self.tag)
 
     @property
     def display_name(self) -> str:
@@ -93,7 +93,7 @@ def create_import_plan(args: argparse.Namespace) -> ImportPlan:
     base_model = parse_model_ref(args.base_model)
 
     if mode == "standard_import":
-        safetensors_path = os.path.abspath(args.safetensors_path)
+        safetensors_path = str(Path(args.safetensors_path).resolve())
         return ImportPlan(
             mode=mode,
             output_model=output_model,
@@ -110,4 +110,3 @@ def create_import_plan(args: argparse.Namespace) -> ImportPlan:
         safetensors_path=None,
         loras=loras,
     )
-

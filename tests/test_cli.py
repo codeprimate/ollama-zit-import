@@ -160,7 +160,9 @@ def test_lora_dry_run_reports_match_stats(
 
 
 @pytest.mark.unit
-def test_lora_execution_writes_output_manifest(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_lora_execution_writes_output_manifest(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     lora_file = tmp_path / "adapter.safetensors"
     _write_safetensors(
         lora_file,
@@ -183,7 +185,9 @@ def test_lora_execution_writes_output_manifest(monkeypatch: pytest.MonkeyPatch, 
     models_root = tmp_path / "models"
     blobs_dir = models_root / "blobs"
     manifest_dir = models_root / "manifests" / "registry.ollama.ai" / "x" / "base"
-    output_manifest = models_root / "manifests" / "registry.ollama.ai" / "x" / "new-model" / "latest"
+    output_manifest = (
+        models_root / "manifests" / "registry.ollama.ai" / "x" / "new-model" / "latest"
+    )
     manifest_dir.mkdir(parents=True, exist_ok=True)
     blobs_dir.mkdir(parents=True, exist_ok=True)
 
@@ -258,7 +262,9 @@ def test_lora_execution_fails_when_output_manifest_exists(
     models_root = tmp_path / "models"
     blobs_dir = models_root / "blobs"
     manifest_dir = models_root / "manifests" / "registry.ollama.ai" / "x" / "base"
-    output_manifest = models_root / "manifests" / "registry.ollama.ai" / "x" / "new-model" / "latest"
+    output_manifest = (
+        models_root / "manifests" / "registry.ollama.ai" / "x" / "new-model" / "latest"
+    )
     manifest_dir.mkdir(parents=True, exist_ok=True)
     output_manifest.parent.mkdir(parents=True, exist_ok=True)
     blobs_dir.mkdir(parents=True, exist_ok=True)
@@ -315,18 +321,16 @@ def test_parse_args_lora_branch_requires_base_model(
     lora_file = tmp_path / "adapter.safetensors"
     lora_file.write_bytes(b"lora")
     monkeypatch.setattr(
-        os,
-        "sys",
-        SimpleNamespace(
-            argv=[
-                "prog",
-                "x/out:latest",
-                "--lora",
-                f"{lora_file}@0.5",
-                "--base-model",
-                "x/base:latest",
-            ]
-        ),
+        sys,
+        "argv",
+        [
+            "prog",
+            "x/out:latest",
+            "--lora",
+            f"{lora_file}@0.5",
+            "--base-model",
+            "x/base:latest",
+        ],
     )
     parsed = cli_module.parse_args()
     assert parsed.output_model == "x/out:latest"
@@ -336,11 +340,7 @@ def test_parse_args_lora_branch_requires_base_model(
 
 @pytest.mark.unit
 def test_parse_args_standard_branch_parses_checkpoint(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        os,
-        "sys",
-        SimpleNamespace(argv=["prog", "/tmp/model.safetensors", "x/out:latest"]),
-    )
+    monkeypatch.setattr(sys, "argv", ["prog", "/tmp/model.safetensors", "x/out:latest"])
     parsed = cli_module.parse_args()
     assert parsed.safetensors_path == "/tmp/model.safetensors"
     assert parsed.output_model == "x/out:latest"

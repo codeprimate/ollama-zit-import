@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from ollama_zit_import.lora import analyze_lora_header, parse_lora_spec, parse_lora_tensor_key
 
 
 @pytest.mark.unit
-def test_parse_lora_spec_accepts_valid_value(tmp_path) -> None:
+def test_parse_lora_spec_accepts_valid_value(tmp_path: Path) -> None:
     lora_file = tmp_path / "adapter.safetensors"
     lora_file.write_bytes(b"x")
     spec = parse_lora_spec(f"{lora_file}@0.7")
@@ -48,4 +50,3 @@ def test_parse_lora_tensor_key_supports_diffusion_model_lora_ab() -> None:
     parsed_b = parse_lora_tensor_key("diffusion_model.layers.0.feed_forward.w1.lora_B.weight")
     assert parsed_a == ("layers.0.feed_forward.w1.weight", "down")
     assert parsed_b == ("layers.0.feed_forward.w1.weight", "up")
-

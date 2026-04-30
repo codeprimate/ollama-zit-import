@@ -18,4 +18,3 @@ def test_count_matching_targets_uses_normalized_transformer_names() -> None:
         "down.blocks.0.attentions.0.to_v.weight",
     }
     assert count_matching_targets(base_layers, lora_targets) == 1
-

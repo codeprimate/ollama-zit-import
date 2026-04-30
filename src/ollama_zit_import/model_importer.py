@@ -49,7 +49,9 @@ def execute_standard_import(
             else:
                 arr = to_float32(raw, dtype, shape)
                 if len(shape) < 1 or shape[0] % 3 != 0:
-                    raise ValueError(f"QKV tensor has unsupported shape for split ({shape}): {source_name}")
+                    raise ValueError(
+                        f"QKV tensor has unsupported shape for split ({shape}): {source_name}"
+                    )
                 chunk = shape[0] // 3
                 splits = {
                     "q": arr[:chunk],
