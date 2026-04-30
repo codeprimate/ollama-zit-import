@@ -36,6 +36,23 @@ def test_parse_model_ref_rejects_empty() -> None:
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize(
+    "model_ref",
+    [
+        "../evil:latest",
+        "ns/../evil:latest",
+        "ns/evil/name:latest",
+        "ns/evil:../latest",
+        "BadNs/model:latest",
+        "ns/model$:latest",
+    ],
+)
+def test_parse_model_ref_rejects_unsafe_or_invalid_components(model_ref: str) -> None:
+    with pytest.raises(ValueError):
+        parse_model_ref(model_ref)
+
+
+@pytest.mark.unit
 def test_map_name_splits_qkv() -> None:
     mapped = map_name("model.diffusion_model.block1.attention.qkv.weight")
     assert mapped == [

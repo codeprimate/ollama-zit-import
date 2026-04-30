@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 from dataclasses import dataclass
 from typing import Literal
 
@@ -11,6 +12,8 @@ from ollama_zit_import.lora import LoRASpec, parse_lora_specs
 
 DEFAULT_MODEL_NAMESPACE = "my"
 ExecutionMode = Literal["standard_import", "lora_only_derivation"]
+MODEL_PATH_COMPONENT_PATTERN = re.compile(r"^[a-z0-9]+(?:[._-][a-z0-9]+)*$")
+MODEL_TAG_PATTERN = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$")
 
 
 @dataclass(frozen=True)
@@ -43,6 +46,18 @@ class ImportPlan:
     loras: list[LoRASpec]
 
 
+def _validate_model_component(component: str, field_name: str) -> str:
+    if not MODEL_PATH_COMPONENT_PATTERN.fullmatch(component):
+        raise ValueError(f"Invalid {field_name} in model reference: {component!r}")
+    return component
+
+
+def _validate_model_tag(tag: str) -> str:
+    if not MODEL_TAG_PATTERN.fullmatch(tag):
+        raise ValueError(f"Invalid tag in model reference: {tag!r}")
+    return tag
+
+
 def parse_model_ref(model: str) -> ModelRef:
     model = model.strip()
     if not model:
@@ -61,7 +76,11 @@ def parse_model_ref(model: str) -> ModelRef:
 
     if not namespace or not name:
         raise ValueError(f"Invalid model reference: {model}")
-    return ModelRef(namespace=namespace, name=name, tag=tag)
+    return ModelRef(
+        namespace=_validate_model_component(namespace, "namespace"),
+        name=_validate_model_component(name, "model name"),
+        tag=_validate_model_tag(tag),
+    )
 
 
 def determine_mode(args: argparse.Namespace) -> ExecutionMode:
