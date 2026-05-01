@@ -202,6 +202,64 @@ existing data when possible and creates a new model entry for the requested outp
 
 For deeper implementation details, see [`technical.md`](technical.md).
 
+## Demo
+
+Terminal walkthrough and example images from this repository.
+
+### Screenshots
+
+![Installing ollama-zit-import from Git](docs/screenshots/01-install.webp)
+
+Installing the CLI with `pip` from the GitHub repository.
+
+![Importing a full z-image-turbo checkpoint](docs/screenshots/02-import-checkpoint.webp)
+
+Importing a full `.safetensors` checkpoint into a new Ollama model.
+
+![Merging LoRA adapters against the stock base model](docs/screenshots/03-import-lora.webp)
+
+LoRA merge import using `--base-model` and `--lora` against `x/z-image-turbo:latest`.
+
+![Merging LoRA adapters on top of a previously imported checkpoint](docs/screenshots/04-import-lora-over-imported-checkpoint.webp)
+
+LoRA merge when the base model is a custom checkpoint you imported earlier.
+
+### Sample outputs
+
+Each image used the `ollama run` command in the matching file under [`docs/samples/`](docs/samples/).
+
+![Output from imported moody checkpoint](docs/samples/moody-1-sample.webp)
+
+```bash
+ollama run my/zit-moody:v5 \
+  "An intergalactic hitchhiker waving a worn and stained towel to get the attention of a spaceship flying overhead." \
+   --seed 42
+```
+
+![Stock z-image-turbo with pixel-style prompt](docs/samples/zit-1-sample.webp)
+
+```bash
+ollama run x/z-image-turbo:latest \
+ "An intergalactic hitchhiker waving a worn and stained towel to get the attention of a spaceship flying overhead. Pixel art style." \
+ --seed 42
+```
+
+![Second sample on stock z-image-turbo](docs/samples/zit-2-sample.webp)
+
+```bash
+ollama run x/z-image-turbo:latest \
+ "An intergalactic hitchhiker waving a worn and stained towel to get the attention of a spaceship flying overhead. Pixel art style." \
+ --seed 42
+```
+
+![Pixel LoRA merged model with matching prompt](docs/samples/zit-2-pixlora-sample.webp)
+
+```bash
+ollama run my/z-image-turbo:pixelart \
+ "An intergalactic hitchhiker waving a worn and stained towel to get the attention of a spaceship flying overhead. Pixel art style." \
+ --seed 42
+```
+
 ## Contributing
 
 Contributions are welcome.

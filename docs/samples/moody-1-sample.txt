@@ -1,0 +1,3 @@
+ollama run my/zit-moody:v5 \
+  "An intergalactic hitchhiker waving a worn and stained towel to get the attention of a spaceship flying overhead." \
+   --seed 42

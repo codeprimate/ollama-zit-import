@@ -1,0 +1,3 @@
+ollama run x/z-image-turbo:latest \
+ "An intergalactic hitchhiker waving a worn and stained towel to get the attention of a spaceship flying overhead. Pixel art style." \
+ --seed 42
