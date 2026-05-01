@@ -57,7 +57,7 @@ def test_execute_standard_import_bf16_passthrough_and_callback(
         completed = cast(int, calls["completed"])
         calls["completed"] = completed + 1
 
-    layers, blobs_new, blobs_reused = execute_standard_import(
+    layers, blobs_new, blobs_reused, new_blob_bytes = execute_standard_import(
         source_tensors=[source_tensor],
         header=header,
         data_offset=0,
@@ -69,6 +69,7 @@ def test_execute_standard_import_bf16_passthrough_and_callback(
 
     assert blobs_new == 1
     assert blobs_reused == 0
+    assert new_blob_bytes == 4
     assert calls["blob_shape"] == [2, 1]
     assert calls["layer_name"] == "transformer/example.weight"
     assert cast(int, calls["completed"]) == 1
@@ -124,7 +125,7 @@ def test_execute_standard_import_splits_qkv_and_counts_reused(
         lambda _blobs_dir, _blob: ("sha256:reused", 8, False),
     )
 
-    layers, blobs_new, blobs_reused = execute_standard_import(
+    layers, blobs_new, blobs_reused, new_blob_bytes = execute_standard_import(
         source_tensors=[source_tensor],
         header=header,
         data_offset=0,
@@ -135,6 +136,7 @@ def test_execute_standard_import_splits_qkv_and_counts_reused(
 
     assert blobs_new == 0
     assert blobs_reused == 3
+    assert new_blob_bytes == 0
     assert seen_shapes == [[2, 1], [2, 1], [2, 1]]
     assert [str(layer["name"]) for layer in layers] == [
         "transformer/attn.to_q.weight",

@@ -29,10 +29,11 @@ def execute_lora_derivation(
     blobs_dir: str,
     initial_layers: list[dict[str, object]],
     on_transformer_layer_complete: Callable[[], None] | None = None,
-) -> tuple[list[dict[str, object]], int, int, list[str]]:
+) -> tuple[list[dict[str, object]], int, int, int, list[str]]:
     new_layers = list(initial_layers)
     blobs_new = 0
     blobs_reused = 0
+    new_blob_bytes = 0
     warnings: list[str] = []
 
     lora_deltas = load_lora_deltas(loras)
@@ -126,6 +127,7 @@ def execute_lora_derivation(
         new_layers.append(layer_entry(layer_name, out_digest, out_size))
         if is_new:
             blobs_new += 1
+            new_blob_bytes += out_size
         else:
             blobs_reused += 1
         matched_targets.add(target_key)
@@ -139,4 +141,4 @@ def execute_lora_derivation(
     if shape_mismatch_targets:
         warnings.append(f"{len(shape_mismatch_targets)} LoRA targets had shape mismatches")
 
-    return new_layers, blobs_new, blobs_reused, warnings
+    return new_layers, blobs_new, blobs_reused, new_blob_bytes, warnings

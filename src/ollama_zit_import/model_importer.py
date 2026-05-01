@@ -25,10 +25,11 @@ def execute_standard_import(
     blobs_dir: str,
     initial_layers: list[dict[str, object]],
     on_source_tensor_complete: Callable[[], None] | None = None,
-) -> tuple[list[dict[str, object]], int, int]:
+) -> tuple[list[dict[str, object]], int, int, int]:
     new_layers = list(initial_layers)
     blobs_new = 0
     blobs_reused = 0
+    new_blob_bytes = 0
 
     for source_name in source_tensors:
         info = cast(dict[str, Any], header[source_name])
@@ -69,9 +70,10 @@ def execute_standard_import(
             new_layers.append(layer_entry(f"transformer/{target_name}", digest, size))
             if is_new:
                 blobs_new += 1
+                new_blob_bytes += size
             else:
                 blobs_reused += 1
         if on_source_tensor_complete:
             on_source_tensor_complete()
 
-    return new_layers, blobs_new, blobs_reused
+    return new_layers, blobs_new, blobs_reused, new_blob_bytes

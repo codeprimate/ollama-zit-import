@@ -22,6 +22,32 @@ You can also combine these workflows. Import a custom full checkpoint first, the
 that imported model as the base for LoRA merge models with tags such as `:style-a` or
 `:experiment-v1`.
 
+## Quick Start
+
+Install:
+
+```bash
+python3 -m pip install git+https://github.com/codeprimate/ollama-zit-import.git
+```
+
+Import a bf16 or fp16 checkpoint:
+
+```bash
+ollama-zit-import /path/to/model.safetensors imported-zit-model
+ollama run my/imported-zit-model
+```
+
+Merge LoRAs into a new model:
+
+```bash
+ollama-zit-import my/zit-style-a:latest \
+  --base-model x/z-image-turbo:latest \
+  --lora /path/style_a.safetensors@0.6
+ollama run my/zit-style-a
+```
+
+See [Installation](#installation) and [Typical Usage](#typical-usage) for clones, options, and detail.
+
 ## Choosing Inputs
 
 When downloading files from model-sharing sites, look for models that are explicitly made
@@ -293,3 +319,43 @@ The package entry points are:
 - `python3 -m ollama_zit_import`, useful from a source checkout.
 
 The main implementation lives under `src/ollama_zit_import/`. Tests live under `tests/`.
+
+## References
+
+Curated links for the model family, weight formats, Ollama’s import and on-disk layout, and adapter theory. These help when debugging tensor maps, manifests, or merge behavior.
+
+### Z-Image (model, weights, upstream code)
+
+- [Tongyi-MAI/Z-Image-Turbo · Hugging Face](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo) — official weights, cards, and ecosystem notes.
+- [Tongyi-MAI/Z-Image · GitHub](https://github.com/Tongyi-MAI/Z-Image) — upstream training/inference code and configuration.
+- [Z-Image: An Efficient Image Generation Foundation Model with Single-Stream Diffusion Transformer · arXiv](https://arxiv.org/abs/2511.22699) — architecture and training context (S3-DiT).
+
+### Diffusers and checkpoint semantics
+
+- [Z-Image pipelines · Diffusers documentation](https://huggingface.co/docs/diffusers/api/pipelines/z_image) — `ZImagePipeline` and related APIs; useful for naming and component boundaries versus `.safetensors` dumps.
+- [Z-Image pipeline source · huggingface/diffusers](https://github.com/huggingface/diffusers/tree/main/src/diffusers/pipelines/z_image) — ground truth for how the reference implementation loads and runs the model.
+
+### Safetensors
+
+- [Safetensors · Hugging Face documentation](https://huggingface.co/docs/safetensors/index) — header layout, dtypes, and safe loading; aligns with how checkpoints are parsed here.
+
+### LoRA and merging (theory and practice)
+
+- [LoRA: Low-Rank Adaptation of Large Language Models · arXiv:2106.09685](https://arxiv.org/abs/2106.09685) — original formulation of low-rank deltas merged into base weights.
+- [Model merging · PEFT documentation](https://huggingface.co/docs/peft/developer_guides/model_merging) — merge strategies and terminology used across the HF stack.
+
+### Ollama (import, Modelfile, API, storage)
+
+- [Importing a model · Ollama docs](https://docs.ollama.com/import) — supported flows and expectations for local weights.
+- [Modelfile reference · Ollama docs](https://docs.ollama.com/modelfile) — `FROM`, adapters, and how Ollama names layers in manifests.
+- [API documentation · ollama/ollama](https://github.com/ollama/ollama/blob/main/docs/api.md) — blob upload and model creation endpoints (contrast with this CLI’s direct manifest write).
+- [Inside Ollama’s model storage — blobs and manifests · Medium](https://medium.com/@dewasheesh.rana/inside-ollamas-model-storage-understanding-blobs-and-manifests-06f1620dd0b2) — unofficial but concrete walkthrough of `manifests/` and `blobs/` layout.
+
+### Quantization and GGUF ecosystem (context for quantized base layers)
+
+- [Difference in different quantization methods · llama.cpp discussion](https://github.com/ggml-org/llama.cpp/discussions/2094) — practical overview of GGUF quant types and trade-offs.
+- [Model quantization: concepts and methods · NVIDIA Technical Blog](https://developer.nvidia.com/blog/model-quantization-concepts-methods-and-why-it-matters/) — background on why quantized weights use scales and block structure.
+
+### Community discussion (signal, not authority)
+
+- [Z-Image Turbo — preliminary testing thread · Hacker News](https://news.ycombinator.com/item?id=46175068) — user reports on quality, speed, and tooling around release time.

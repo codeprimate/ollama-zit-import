@@ -162,7 +162,7 @@ def test_lora_dry_run_reports_match_stats(
 
 @pytest.mark.unit
 def test_lora_execution_writes_output_manifest(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     lora_file = tmp_path / "adapter.safetensors"
     _write_safetensors(
@@ -233,6 +233,10 @@ def test_lora_execution_writes_output_manifest(
 
     assert run() == 0
     assert output_manifest.exists()
+    out = capsys.readouterr().out
+    assert "Store" in out
+    assert "shared digests not counted" in out
+    assert "blobs" in out and "manifest" in out
 
 
 @pytest.mark.unit

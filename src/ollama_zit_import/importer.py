@@ -32,6 +32,20 @@ from ollama_zit_import.runtime_support import (
 
 CONFIG_LAYER_NAME = "transformer/config.json"
 TRANSFORMER_PREFIX = "transformer/"
+IEC_BYTE_BASE = 1024
+
+
+def _format_iec_bytes(size: int) -> str:
+    """Format byte count as KiB/MiB/GiB/TiB (1024-based)."""
+    if size < IEC_BYTE_BASE:
+        return f"{size} B"
+    if size < IEC_BYTE_BASE**2:
+        return f"{size / IEC_BYTE_BASE:.1f} KiB"
+    if size < IEC_BYTE_BASE**3:
+        return f"{size / IEC_BYTE_BASE**2:.1f} MiB"
+    if size < IEC_BYTE_BASE**4:
+        return f"{size / IEC_BYTE_BASE**3:.2f} GiB"
+    return f"{size / IEC_BYTE_BASE**4:.2f} TiB"
 
 
 def _validate_inputs(plan: ImportPlan, ollama_models: Path) -> None:
@@ -213,16 +227,18 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
                 task_id = progress.add_task(
                     "Applying LoRA deltas", total=len(base_transformer_names)
                 )
-                new_layers, blobs_new, blobs_reused, warnings = execute_lora_derivation(
-                    loras=plan.loras,
-                    base=base,
-                    base_layer_lookup=base_layer_lookup,
-                    blobs_dir=str(blobs_dir),
-                    initial_layers=kept_layers,
-                    on_transformer_layer_complete=lambda: progress.advance(task_id),
+                new_layers, blobs_new, blobs_reused, new_blob_bytes, warnings = (
+                    execute_lora_derivation(
+                        loras=plan.loras,
+                        base=base,
+                        base_layer_lookup=base_layer_lookup,
+                        blobs_dir=str(blobs_dir),
+                        initial_layers=kept_layers,
+                        on_transformer_layer_complete=lambda: progress.advance(task_id),
+                    )
                 )
         else:
-            new_layers, blobs_new, blobs_reused, warnings = execute_lora_derivation(
+            new_layers, blobs_new, blobs_reused, new_blob_bytes, warnings = execute_lora_derivation(
                 loras=plan.loras,
                 base=base,
                 base_layer_lookup=base_layer_lookup,
@@ -249,7 +265,7 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
                 task_id = progress.add_task(
                     "Converting and writing tensors", total=len(source_tensors)
                 )
-                new_layers, blobs_new, blobs_reused = execute_standard_import(
+                new_layers, blobs_new, blobs_reused, new_blob_bytes = execute_standard_import(
                     source_tensors=source_tensors,
                     header=header,
                     data_offset=data_offset,
@@ -259,7 +275,7 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
                     on_source_tensor_complete=lambda: progress.advance(task_id),
                 )
         else:
-            new_layers, blobs_new, blobs_reused = execute_standard_import(
+            new_layers, blobs_new, blobs_reused, new_blob_bytes = execute_standard_import(
                 source_tensors=source_tensors,
                 header=header,
                 data_offset=data_offset,
@@ -276,6 +292,7 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
     }
     with out_manifest.open("w", encoding="utf-8") as handle:
         json.dump(new_manifest, handle, indent=2)
+    manifest_bytes = out_manifest.stat().st_size
 
     total_layers = len(new_layers)
     base_count = len(kept_layers)
@@ -293,6 +310,11 @@ def run_import(args: argparse.Namespace, *, console: Console | None = None) -> i
         )
         active_console.print(
             f"  [bold]Blobs[/bold]     {blobs_new} written · {blobs_reused} reused"
+        )
+        active_console.print(
+            f"  [bold]Store[/bold]     +{_format_iec_bytes(new_blob_bytes)} blobs  ·  "
+            f"{_format_iec_bytes(manifest_bytes)} manifest"
+            "  [dim]shared digests not counted[/dim]"
         )
         active_console.print()
         active_console.print(
